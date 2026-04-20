@@ -20,7 +20,7 @@ const SocioSelector = ({ onSelect }) => {
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950 p-6">
       <div className="max-w-4xl w-full text-center space-y-12 animate-in fade-in zoom-in duration-500">
         <div>
-          <span className="text-secondary font-headline font-bold text-sm tracking-[0.4em] uppercase mb-4 block">Bienvenido a The Ledger</span>
+          <span className="text-secondary font-headline font-bold text-sm tracking-[0.4em] uppercase mb-4 block">Bienvenido a La Pampa Gringa</span>
           <h2 className="text-4xl md:text-6xl font-headline font-black text-white tracking-tighter">¿Quién eres hoy?</h2>
           <p className="text-slate-400 mt-4 text-lg">Selecciona tu perfil para personalizar tu sesión.</p>
         </div>

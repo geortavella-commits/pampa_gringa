@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'The Ledger',
-        short_name: 'Ledger',
-        description: 'Family Heritage Financial Management System',
+        name: 'La Pampa Gringa',
+        short_name: 'Gringa',
+        description: 'Sistema de Gestión Patrimonial Familiar',
         theme_color: '#1A2744',
         background_color: '#F5F4F0',
         display: 'standalone',

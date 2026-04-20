@@ -169,7 +169,7 @@ const Dashboard = ({ onOpenOperationModal, onOpenJournalModal }) => {
 
       {/* Título Oficial Informe (Solo PDF) */}
       <div className="hidden print:block mb-8 border-b-4 border-black pb-4 print-full text-left">
-        <h1 className="text-4xl font-black uppercase italic tracking-tighter">The Ledger • Informe Ejecutivo</h1>
+        <h1 className="text-4xl font-black uppercase italic tracking-tighter">La Pampa Gringa • Informe Ejecutivo</h1>
         <p className="font-bold text-slate-500 uppercase text-[10px] tracking-widest">
           Periodo: {new Date(customDates.from).toLocaleDateString('es-AR')} AL {new Date(customDates.to).toLocaleDateString('es-AR')}
         </p>

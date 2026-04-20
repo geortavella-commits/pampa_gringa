@@ -58,7 +58,7 @@ function App() {
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance</span>
           </div>
           <div>
-            <h1 className="font-headline text-2xl font-black text-slate-900 dark:text-slate-50 leading-none">The Ledger</h1>
+            <h1 className="font-headline text-2xl font-black text-slate-900 dark:text-slate-50 leading-none">La Pampa Gringa</h1>
             <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold tracking-widest">Curador de Patrimonio</p>
           </div>
         </div>
