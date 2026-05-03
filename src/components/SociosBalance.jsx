@@ -58,20 +58,23 @@ const SociosBalance = () => {
           if (op.tipo === 'ingreso') {
             if (op.estado === 'pagado') acc.cobrado += val;
             else acc.a_cobrar += val;
-          } else {
+          } else if (op.tipo === 'egreso') {
             if (op.estado === 'pagado') acc.pagado += val;
             else acc.a_pagar += val;
+          } else if (op.tipo === 'retiro_socio') {
+            if (op.estado === 'pagado') acc.retiros += val;
+            else acc.retiros_pendientes += val;
           }
           return acc;
-        }, { cobrado: 0, a_cobrar: 0, pagado: 0, a_pagar: 0 });
+        }, { cobrado: 0, a_cobrar: 0, pagado: 0, a_pagar: 0, retiros: 0, retiros_pendientes: 0 });
 
         return {
           id: socio.id,
           nombre: socio.nombre,
           rol: socio.rol,
           ...stats,
-          real: stats.cobrado - stats.pagado,
-          proyectado: (stats.cobrado + stats.a_cobrar) - (stats.pagado + stats.a_pagar)
+          real: stats.cobrado - stats.pagado - stats.retiros,
+          proyectado: (stats.cobrado + stats.a_cobrar) - (stats.pagado + stats.a_pagar) - (stats.retiros + stats.retiros_pendientes)
         };
       });
 
@@ -155,7 +158,17 @@ const SociosBalance = () => {
               </div>
 
               <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
-                <div className="flex justify-between items-center">
+                <div className="bg-slate-50 dark:bg-slate-800/30 p-4 rounded-xl border border-slate-100 dark:border-slate-800/50 flex justify-between items-center">
+                  <div className="text-left">
+                    <p className="text-[9px] font-black uppercase text-amber-600 tracking-widest mb-0.5">Retiros de Capital</p>
+                    {socio.retiros_pendientes > 0 && <p className="text-[7px] font-bold text-amber-600/60 uppercase tracking-tighter">Pendiente: {formatCurrency(socio.retiros_pendientes)}</p>}
+                  </div>
+                  <p className="text-base font-black text-amber-600">
+                    -{formatCurrency(socio.retiros)}
+                  </p>
+                </div>
+
+                <div className="flex justify-between items-center pt-2">
                   <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Resultado Proyectado</p>
                   <p className={`text-lg font-black ${socio.proyectado >= 0 ? 'text-primary' : 'text-rose-600'}`}>
                     {formatCurrency(socio.proyectado)}

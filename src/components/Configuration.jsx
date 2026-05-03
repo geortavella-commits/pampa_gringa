@@ -9,8 +9,10 @@ const Configuration = () => {
   // Estados para edición/creación
   const [newSocio, setNewSocio] = useState('');
   const [newRubro, setNewRubro] = useState('');
+  const [newRubroTipo, setNewRubroTipo] = useState('egreso');
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [editTipoValue, setEditTipoValue] = useState('egreso');
 
   useEffect(() => {
     fetchData();
@@ -27,9 +29,16 @@ const Configuration = () => {
 
   const handleAdd = async (table, value, setter) => {
     if (!value.trim()) return;
-    const { error } = await supabase.from(table).insert([{ nombre: value }]);
+    
+    let payload = { nombre: value };
+    if (table === 'rubros') {
+      payload.tipo = newRubroTipo;
+    }
+    
+    const { error } = await supabase.from(table).insert([payload]);
     if (!error) {
       setter('');
+      if (table === 'rubros') setNewRubroTipo('egreso');
       fetchData();
     } else {
       alert("Error al añadir: " + error.message);
@@ -46,16 +55,22 @@ const Configuration = () => {
     }
   };
 
-  const startEdit = (id, val) => {
+  const startEdit = (id, val, tipo = null) => {
     setEditingId(id);
     setEditValue(val);
+    if (tipo) setEditTipoValue(tipo);
   };
 
   const handleUpdate = async (table) => {
-    const { error } = await supabase.from(table).update({ nombre: editValue }).eq('id', editingId);
+    const payload = { nombre: editValue };
+    if (table === 'rubros') payload.tipo = editTipoValue;
+    
+    const { error } = await supabase.from(table).update(payload).eq('id', editingId);
     if (!error) {
       setEditingId(null);
       fetchData();
+    } else {
+      alert("Error al actualizar: " + error.message);
     }
   };
 
@@ -128,15 +143,24 @@ const Configuration = () => {
           </div>
 
           <div className="flex gap-2">
+            <select
+              value={newRubroTipo}
+              onChange={(e) => setNewRubroTipo(e.target.value)}
+              className="bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-4 pr-8 text-xs font-bold shadow-sm focus:ring-2 focus:ring-secondary"
+            >
+              <option value="egreso">Gasto</option>
+              <option value="ingreso">Ingreso</option>
+              <option value="retiro_socio">Retiro Socio</option>
+            </select>
             <input 
               value={newRubro}
               onChange={(e) => setNewRubro(e.target.value)}
-              placeholder="Categoría de gasto/ingreso..." 
-              className="flex-1 bg-white dark:bg-slate-900 border-none rounded-xl px-6 py-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-secondary"
+              placeholder="Nombre del rubro..." 
+              className="flex-1 bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-secondary"
             />
             <button 
               onClick={() => handleAdd('rubros', newRubro, setNewRubro)}
-              className="bg-secondary text-white p-4 rounded-xl shadow-lg hover:scale-105 transition-all"
+              className="bg-secondary text-white px-6 rounded-xl shadow-lg hover:scale-105 transition-all font-bold text-sm flex items-center justify-center"
             >
               <span className="material-symbols-outlined">add</span>
             </button>
@@ -148,14 +172,28 @@ const Configuration = () => {
                 <li key={r.id} className="p-6 flex items-center justify-between group">
                   {editingId === r.id ? (
                     <div className="flex-1 flex gap-2">
+                      <select
+                        value={editTipoValue}
+                        onChange={(e) => setEditTipoValue(e.target.value)}
+                        className="bg-slate-50 border border-secondary rounded-lg px-2 py-2 pr-6 text-xs font-bold"
+                      >
+                        <option value="egreso">Gasto</option>
+                        <option value="ingreso">Ingreso</option>
+                        <option value="retiro_socio">Retiro Socio</option>
+                      </select>
                       <input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="flex-1 bg-slate-50 p-2 rounded-lg text-sm border border-secondary" />
                       <button onClick={() => handleUpdate('rubros')} className="text-primary text-sm font-black">GUARDAR</button>
                     </div>
                   ) : (
                     <>
-                      <span className="text-sm font-headline font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{r.nombre}</span>
+                      <div>
+                        <span className="text-sm font-headline font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{r.nombre}</span>
+                        <div className={`mt-1 inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${r.tipo === 'ingreso' ? 'bg-secondary/10 text-secondary' : r.tipo === 'retiro_socio' ? 'bg-amber-100/50 text-amber-700' : 'bg-tertiary/10 text-tertiary'}`}>
+                          {r.tipo === 'ingreso' ? 'Ingreso' : r.tipo === 'retiro_socio' ? 'Retiro' : 'Gasto'}
+                        </div>
+                      </div>
                       <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => startEdit(r.id, r.nombre)} className="text-slate-400 hover:text-secondary"><span className="material-symbols-outlined text-lg">edit</span></button>
+                        <button onClick={() => startEdit(r.id, r.nombre, r.tipo)} className="text-slate-400 hover:text-secondary"><span className="material-symbols-outlined text-lg">edit</span></button>
                         <button onClick={() => handleDelete('rubros', r.id)} className="text-slate-400 hover:text-tertiary"><span className="material-symbols-outlined text-lg">delete</span></button>
                       </div>
                     </>

@@ -4,9 +4,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 
 const Dashboard = ({ onOpenOperationModal, onOpenJournalModal }) => {
   const [loading, setLoading] = useState(true);
-  const [balance, setBalance] = useState({ cobrado: 0, a_cobrar: 0, pagado: 0, a_pagar: 0, proyectado: 0, real: 0 });
+  const [balance, setBalance] = useState({ cobrado: 0, a_cobrar: 0, pagado: 0, a_pagar: 0, proyectado: 0, real: 0, retiros: 0, retiros_pendientes: 0 });
   const [sociosSummary, setSociosSummary] = useState([]);
   const [chartData, setChartData] = useState([]);
+  const [retiroChartData, setRetiroChartData] = useState([]);
   const [reportActivity, setReportActivity] = useState([]); 
   const [pendingAgenda, setPendingAgenda] = useState([]);
   
@@ -51,40 +52,51 @@ const Dashboard = ({ onOpenOperationModal, onOpenJournalModal }) => {
           if (op.tipo === 'ingreso') {
             if (op.estado === 'pagado') acc.cobrado += val;
             else acc.a_cobrar += val;
-          } else {
+          } else if (op.tipo === 'egreso') {
             if (op.estado === 'pagado') acc.pagado += val;
             else acc.a_pagar += val;
+          } else if (op.tipo === 'retiro_socio') {
+            if (op.estado === 'pagado') acc.retiros += val;
+            else acc.retiros_pendientes += val;
           }
           return acc;
-        }, { cobrado: 0, a_cobrar: 0, pagado: 0, a_pagar: 0 });
+        }, { cobrado: 0, a_cobrar: 0, pagado: 0, a_pagar: 0, retiros: 0, retiros_pendientes: 0 });
 
         setBalance({
           ...stats,
-          real: stats.cobrado - stats.pagado,
-          proyectado: (stats.cobrado + stats.a_cobrar) - (stats.pagado + stats.a_pagar)
+          real: stats.cobrado - stats.pagado - stats.retiros,
+          proyectado: (stats.cobrado + stats.a_cobrar) - (stats.pagado + stats.a_pagar) - (stats.retiros + stats.retiros_pendientes)
         });
 
         const socioMap = {};
+        const retiroMap = {};
         allOps.forEach(op => {
           const sId = op.socio_id || 'unassigned';
           const sName = op.socios?.nombre || 'Sin Asignar';
           if (!socioMap[sId]) {
-            socioMap[sId] = { nombre: sName, cobrado: 0, a_cobrar: 0, pagado: 0, a_pagar: 0 };
+            socioMap[sId] = { nombre: sName, cobrado: 0, a_cobrar: 0, pagado: 0, a_pagar: 0, retiros: 0, retiros_pendientes: 0 };
           }
           const val = parseFloat(op.monto);
           if (op.tipo === 'ingreso') {
             if (op.estado === 'pagado') socioMap[sId].cobrado += val;
             else socioMap[sId].a_cobrar += val;
-          } else {
+          } else if (op.tipo === 'egreso') {
             if (op.estado === 'pagado') socioMap[sId].pagado += val;
             else socioMap[sId].a_pagar += val;
+          } else if (op.tipo === 'retiro_socio') {
+            if (op.estado === 'pagado') {
+              socioMap[sId].retiros += val;
+              retiroMap[sName] = (retiroMap[sName] || 0) + val;
+            }
+            else socioMap[sId].retiros_pendientes += val;
           }
         });
         setSociosSummary(Object.values(socioMap).map(s => ({
           ...s,
-          real: s.cobrado - s.pagado,
-          proyectado: (s.cobrado + s.a_cobrar) - (s.pagado + s.a_pagar)
+          real: s.cobrado - s.pagado - s.retiros,
+          proyectado: (s.cobrado + s.a_cobrar) - (s.pagado + s.a_pagar) - (s.retiros + s.retiros_pendientes)
         })));
+        setRetiroChartData(Object.entries(retiroMap).map(([name, value]) => ({ name, value: Math.abs(value) })));
 
         const rubroMap = {};
         allOps.forEach(op => {
@@ -230,6 +242,10 @@ const Dashboard = ({ onOpenOperationModal, onOpenJournalModal }) => {
                   <p className="text-[10px] font-black text-rose-500">-{formatCurrency(socio.a_pagar)}</p>
                 </div>
               </div>
+              <div className="mt-3 bg-amber-50 dark:bg-amber-900/20 p-2 rounded-xl flex justify-between items-center border border-amber-100 dark:border-amber-900/50">
+                <p className="text-[8px] font-black uppercase text-amber-600 dark:text-amber-500">Retiros</p>
+                <p className="text-xs font-black text-amber-600 dark:text-amber-500">-{formatCurrency(socio.retiros)}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -275,8 +291,8 @@ const Dashboard = ({ onOpenOperationModal, onOpenJournalModal }) => {
       </section>
 
       {/* Gráfico y Pendientes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 print:grid-cols-2">
-        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 print:break-inside-avoid shadow-sm text-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 print:grid-cols-3">
+        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 print:break-inside-avoid shadow-sm text-center flex flex-col justify-center">
           <h4 className="text-lg font-black mb-6 uppercase tracking-widest">Desglose Egreso</h4>
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -284,7 +300,21 @@ const Dashboard = ({ onOpenOperationModal, onOpenJournalModal }) => {
                 <Pie data={chartData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
                   {chartData.map((entry, index) => <Cell key={`c-${index}`} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 print:break-inside-avoid shadow-sm text-center flex flex-col justify-center">
+          <h4 className="text-lg font-black mb-6 uppercase tracking-widest text-amber-500">Retiros por Socio</h4>
+          <div className="h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={retiroChartData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                  {retiroChartData.map((entry, index) => <Cell key={`r-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />)}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value)} />
               </PieChart>
             </ResponsiveContainer>
           </div>

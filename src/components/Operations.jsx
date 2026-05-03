@@ -196,7 +196,17 @@ const Operations = ({ onOpenModal }) => {
             </button>
           ))}
         </div>
-        <div className="flex-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 p-2 flex items-center">
+
+        <select 
+          value={filterSocio} 
+          onChange={(e) => setFilterSocio(e.target.value)}
+          className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 px-4 py-3 text-xs font-bold text-slate-500 shadow-sm"
+        >
+          <option value="all">Todos los Socios</option>
+          {socios.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+        </select>
+
+        <div className="flex-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 p-2 flex items-center shadow-sm">
            <span className="material-symbols-outlined text-slate-300 ml-2">search</span>
            <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} type="text" placeholder="Filtrar por concepto..." className="bg-transparent border-none text-xs font-bold w-full focus:ring-0 placeholder:text-slate-300" />
         </div>
@@ -223,12 +233,19 @@ const Operations = ({ onOpenModal }) => {
                 </td>
                 <td className="px-4 py-4 md:px-6 md:py-6 text-center">
                   <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${op.estado === 'pagado' ? 'bg-secondary/10 text-secondary' : 'bg-amber-100/50 text-amber-700'}`}>
-                    {op.estado === 'pagado' ? (op.tipo === 'ingreso' ? 'Cobrado' : 'Pagado') : 'Pendiente'}
+                    {op.estado === 'pagado' ? (op.tipo === 'ingreso' ? 'Cobrado' : op.tipo === 'retiro_socio' ? 'Retirado' : 'Pagado') : 'Pendiente'}
                   </div>
                 </td>
                 <td className="px-4 py-4 md:px-6 md:py-6">
                   <p className="text-base font-headline font-extrabold text-slate-800 dark:text-slate-50 group-hover:text-primary transition-colors">{op.titulo}</p>
-                  <p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-tighter opacity-60">{op.rubros?.nombre}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-[10px] uppercase font-black text-slate-400 tracking-tighter opacity-60">{op.rubros?.nombre}</p>
+                    {op.socios && (
+                      <span className="text-[9px] uppercase font-black text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded tracking-tighter">
+                        {op.socios.nombre}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-4 md:px-6 md:py-6 text-right">
                   <div className="flex items-center justify-end space-x-2">

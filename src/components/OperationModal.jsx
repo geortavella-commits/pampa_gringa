@@ -96,13 +96,13 @@ const OperationModal = ({ isOpen, onClose, onSuccess, operationToEdit, currentSo
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 
       <div className="relative bg-white dark:bg-slate-950 w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
-        <div className={`h-2 w-full flex-shrink-0 ${formData.tipo === 'ingreso' ? 'bg-secondary' : 'bg-tertiary'}`}></div>
+        <div className={`h-2 w-full flex-shrink-0 ${formData.tipo === 'ingreso' ? 'bg-secondary' : formData.tipo === 'retiro_socio' ? 'bg-amber-500' : 'bg-tertiary'}`}></div>
         
         <div className="p-6 md:p-8 overflow-y-auto">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h3 className="text-2xl font-headline font-extrabold text-primary dark:text-white tracking-tight">
-                {operationToEdit ? 'Editar Registro' : (formData.tipo === 'ingreso' ? 'Registrar Cobro' : 'Registrar Gasto')}
+                {operationToEdit ? 'Editar Registro' : (formData.tipo === 'ingreso' ? 'Registrar Cobro' : formData.tipo === 'retiro_socio' ? 'Registrar Retiro' : 'Registrar Gasto')}
               </h3>
               <p className="text-xs text-on-surface-variant uppercase tracking-widest font-bold mt-1">Sincronización con Libro Mayor</p>
             </div>
@@ -115,17 +115,24 @@ const OperationModal = ({ isOpen, onClose, onSuccess, operationToEdit, currentSo
             <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
               <button
                 type="button"
-                onClick={() => setFormData({...formData, tipo: 'egreso', estado: 'pendiente'})}
-                className={`flex-1 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${formData.tipo === 'egreso' ? 'bg-white dark:bg-slate-800 text-tertiary shadow-sm' : 'text-slate-400'}`}
+                onClick={() => setFormData({...formData, tipo: 'ingreso', estado: 'pendiente', rubro_id: ''})}
+                className={`flex-1 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${formData.tipo === 'ingreso' ? 'bg-white dark:bg-slate-800 text-secondary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                Ingreso
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, tipo: 'egreso', estado: 'pendiente', rubro_id: ''})}
+                className={`flex-1 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${formData.tipo === 'egreso' ? 'bg-white dark:bg-slate-800 text-tertiary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 Gasto
               </button>
               <button
                 type="button"
-                onClick={() => setFormData({...formData, tipo: 'ingreso', estado: 'pendiente'})}
-                className={`flex-1 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${formData.tipo === 'ingreso' ? 'bg-white dark:bg-slate-800 text-secondary shadow-sm' : 'text-slate-400'}`}
+                onClick={() => setFormData({...formData, tipo: 'retiro_socio', estado: 'pendiente', rubro_id: ''})}
+                className={`flex-1 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${formData.tipo === 'retiro_socio' ? 'bg-white dark:bg-slate-800 text-amber-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                Ingreso
+                Retiro
               </button>
             </div>
 
@@ -174,7 +181,7 @@ const OperationModal = ({ isOpen, onClose, onSuccess, operationToEdit, currentSo
                 >
                   <option value="pendiente">⏳ Pendiente</option>
                   <option value="pagado">
-                    {formData.tipo === 'ingreso' ? '✅ Cobrado' : '✅ Pagado'}
+                    {formData.tipo === 'ingreso' ? '✅ Cobrado' : formData.tipo === 'retiro_socio' ? '✅ Retirado' : '✅ Pagado'}
                   </option>
                 </select>
               </div>
@@ -190,7 +197,7 @@ const OperationModal = ({ isOpen, onClose, onSuccess, operationToEdit, currentSo
                   onChange={(e) => setFormData({...formData, rubro_id: e.target.value})}
                 >
                   <option value="">Seleccionar...</option>
-                  {rubros.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                  {rubros.filter(r => r.tipo === formData.tipo).map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
@@ -211,7 +218,7 @@ const OperationModal = ({ isOpen, onClose, onSuccess, operationToEdit, currentSo
               <button
                 disabled={loading}
                 type="submit"
-                className={`w-full py-4 rounded-xl font-headline font-bold text-white shadow-xl transition-all active:scale-95 flex items-center justify-center space-x-2 ${formData.tipo === 'ingreso' ? 'bg-secondary' : 'bg-primary'}`}
+                className={`w-full py-4 rounded-xl font-headline font-bold text-white shadow-xl transition-all active:scale-95 flex items-center justify-center space-x-2 ${formData.tipo === 'ingreso' ? 'bg-secondary' : formData.tipo === 'retiro_socio' ? 'bg-amber-500' : 'bg-primary'}`}
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
