@@ -11,10 +11,20 @@ const Dashboard = ({ onOpenOperationModal, onOpenJournalModal }) => {
   const [reportActivity, setReportActivity] = useState([]); 
   const [pendingAgenda, setPendingAgenda] = useState([]);
   
+  const getLocalISODate = (date) => {
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  };
+
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
   const [dateRange, setDateRange] = useState('month');
   const [customDates, setCustomDates] = useState({
-    from: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
-    to: new Date().toISOString().split('T')[0]
+    from: getLocalISODate(firstDayOfMonth),
+    to: getLocalISODate(lastDayOfMonth)
   });
 
   useEffect(() => {
@@ -29,21 +39,41 @@ const Dashboard = ({ onOpenOperationModal, onOpenJournalModal }) => {
         fromDate = customDates.from;
         toDate = customDates.to;
       } else {
-        let start = new Date();
-        if (dateRange === 'month') start.setMonth(start.getMonth() - 1);
-        else if (dateRange === 'quarter') start.setMonth(start.getMonth() - 3);
-        else if (dateRange === 'year') start.setFullYear(start.getFullYear() - 1);
-        else start = new Date('2000-01-01');
-        fromDate = start.toISOString().split('T')[0];
-        toDate = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        let start, end;
+        if (dateRange === 'month') {
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        } else if (dateRange === 'quarter') {
+          // Cuatrimestre (4 months)
+          const currentCuat = Math.floor(now.getMonth() / 4);
+          start = new Date(now.getFullYear(), currentCuat * 4, 1);
+          end = new Date(now.getFullYear(), (currentCuat + 1) * 4, 0);
+        } else if (dateRange === 'year') {
+          start = new Date(now.getFullYear(), 0, 1);
+          end = new Date(now.getFullYear(), 11, 31);
+        } else {
+          start = new Date(2000, 0, 1);
+          end = new Date(2100, 11, 31);
+        }
+        fromDate = getLocalISODate(start);
+        toDate = getLocalISODate(end);
       }
 
       let opsQuery = supabase.from('operaciones').select('*, rubros(nombre), socios(nombre)').eq('anulada', false);
-      if (dateRange !== 'all') opsQuery = opsQuery.gte('fecha', fromDate).lte('fecha', toDate);
+      if (dateRange !== 'all') {
+        const fromISO = new Date(fromDate + 'T00:00:00').toISOString();
+        const toISO = new Date(toDate + 'T23:59:59.999').toISOString();
+        opsQuery = opsQuery.gte('fecha', fromISO).lte('fecha', toISO);
+      }
       const { data: allOps } = await opsQuery.order('fecha', { ascending: false });
 
       let notesQuery = supabase.from('notas').select('*, socios(nombre)');
-      if (dateRange !== 'all') notesQuery = notesQuery.gte('fecha', fromDate).lte('fecha', toDate);
+      if (dateRange !== 'all') {
+        const fromISO = new Date(fromDate + 'T00:00:00').toISOString();
+        const toISO = new Date(toDate + 'T23:59:59.999').toISOString();
+        notesQuery = notesQuery.gte('fecha', fromISO).lte('fecha', toISO);
+      }
       const { data: allNotes } = await notesQuery.order('fecha', { ascending: false });
 
       if (allOps) {
