@@ -7,6 +7,9 @@ import JournalModal from './components/JournalModal';
 import Configuration from './components/Configuration';
 import SociosBalance from './components/SociosBalance';
 import SocioSelector from './components/SocioSelector';
+import Documentos from './components/Documentos';
+import DocumentosModal from './components/DocumentosModal';
+
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -22,6 +25,8 @@ function App() {
   // Journal State
   const [isJournalModalOpen, setIsJournalModalOpen] = useState(false);
   const [noteToEdit, setNoteToEdit] = useState(null);
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [docToEdit, setDocToEdit] = useState(null);
   
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -43,6 +48,11 @@ function App() {
   const handleOpenJournalModal = (note = null) => {
     setNoteToEdit(note);
     setIsJournalModalOpen(true);
+  };
+
+  const handleOpenDocModal = (doc = null) => {
+    setDocToEdit(doc);
+    setIsDocModalOpen(true);
   };
 
   const handleSuccess = () => {
@@ -102,6 +112,14 @@ function App() {
           >
             <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === 'journal' ? "'FILL' 1" : "'FILL' 0" }}>menu_book</span>
             <span>Diario</span>
+          </button>
+
+          <button 
+            onClick={() => setCurrentView('documentos')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 transition-all rounded-lg font-body text-sm font-medium ${currentView === 'documentos' ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
+          >
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === 'documentos' ? "'FILL' 1" : "'FILL' 0" }}>folder_special</span>
+            <span>Documentos</span>
           </button>
 
           <button 
@@ -175,6 +193,12 @@ function App() {
               onOpenModal={handleOpenJournalModal} 
             />
           )}
+          {currentView === 'documentos' && (
+            <Documentos 
+              key={`docs-${refreshKey}`} 
+              onOpenModal={handleOpenDocModal} 
+            />
+          )}
           {currentView === 'config' && (
             <Configuration />
           )}
@@ -197,6 +221,10 @@ function App() {
         <button onClick={() => setCurrentView('journal')} className={`flex flex-col items-center gap-1 ${currentView === 'journal' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
           <span className="material-symbols-outlined">menu_book</span>
           <span className="text-[10px] font-bold uppercase font-headline">Diario</span>
+        </button>
+        <button onClick={() => setCurrentView('documentos')} className={`flex flex-col items-center gap-1 ${currentView === 'documentos' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
+          <span className="material-symbols-outlined">folder_special</span>
+          <span className="text-[10px] font-bold uppercase font-headline">Docs</span>
         </button>
         <button onClick={() => setCurrentView('socios')} className={`flex flex-col items-center gap-1 ${currentView === 'socios' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
           <span className="material-symbols-outlined">group</span>
@@ -224,6 +252,13 @@ function App() {
         onClose={() => { setIsJournalModalOpen(false); setNoteToEdit(null); }}
         onSuccess={handleSuccess}
         noteToEdit={noteToEdit}
+        currentSocioId={currentSocio?.id}
+      />
+      <DocumentosModal 
+        isOpen={isDocModalOpen}
+        onClose={() => { setIsDocModalOpen(false); setDocToEdit(null); }}
+        onSuccess={handleSuccess}
+        documentoToEdit={docToEdit}
         currentSocioId={currentSocio?.id}
       />
     </div>
