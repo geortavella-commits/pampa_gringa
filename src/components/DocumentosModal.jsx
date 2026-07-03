@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+const sanitizeFilename = (name) =>
+  name.replace(/[^a-zA-Z0-9.\-_() áéíóúÁÉÍÓÚüÜñÑ]/g, '_').replace(/\s+/g, ' ').trim();
+
 const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentSocioId }) => {
   const [loading, setLoading] = useState(false);
   const [nombre, setNombre] = useState('');
@@ -39,7 +42,7 @@ const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentS
             .remove([documentoToEdit.storage_path]);
           if (removeError) throw removeError;
 
-          const storagePath = `${categoria}/${Date.now()}-${file.name}`;
+          const storagePath = `${categoria}/${Date.now()}-${sanitizeFilename(file.name)}`;
           const { error: uploadError } = await supabase.storage
             .from('documentos')
             .upload(storagePath, file);
@@ -75,7 +78,7 @@ const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentS
       } else {
         if (!file) throw new Error('Debe seleccionar un archivo');
 
-        const storagePath = `${categoria}/${Date.now()}-${file.name}`;
+        const storagePath = `${categoria}/${Date.now()}-${sanitizeFilename(file.name)}`;
         const { error: uploadError } = await supabase.storage
           .from('documentos')
           .upload(storagePath, file);
