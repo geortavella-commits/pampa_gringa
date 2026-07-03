@@ -136,6 +136,11 @@ function App() {
             </div>
           </div>
         </div>
+        <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+          <p className="text-[9px] text-slate-400 font-mono text-center tracking-tighter">
+            build {new Date('2026-07-03T18:30:00').toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
       </aside>
 
       {/* Main Content */}
