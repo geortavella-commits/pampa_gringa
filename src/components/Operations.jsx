@@ -1,12 +1,126 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+const ReplicarModal = ({ op, onClose, onSuccess }) => {
+  const [meses, setMeses] = useState(3);
+  const [loading, setLoading] = useState(false);
+
+  const handleReplicar = async () => {
+    setLoading(true);
+    try {
+      const grupoId = op.grupo_id || crypto.randomUUID();
+      const cuotaBase = op.cuota_numero || 1;
+      const totalNuevo = cuotaBase + meses;
+
+      // Actualizar la operación original con grupo y totales
+      const { error: updateError } = await supabase
+        .from('operaciones')
+        .update({ grupo_id: grupoId, cuota_numero: cuotaBase, cuota_total: totalNuevo })
+        .eq('id', op.id);
+      if (updateError) throw updateError;
+
+      // Si ya había otras cuotas del mismo grupo, actualizarles el total
+      if (op.grupo_id) {
+        await supabase
+          .from('operaciones')
+          .update({ cuota_total: totalNuevo })
+          .eq('grupo_id', grupoId)
+          .neq('id', op.id);
+      }
+
+      const [year, month, day] = op.fecha.split('-').map(Number);
+      const nuevas = [];
+      for (let i = 1; i <= meses; i++) {
+        const d = new Date(year, month - 1 + i, day);
+        const fechaStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        nuevas.push({
+          titulo: op.titulo,
+          tipo: op.tipo,
+          monto: op.monto,
+          rubro_id: op.rubro_id,
+          socio_id: op.socio_id,
+          descripcion: op.descripcion,
+          fecha: fechaStr,
+          estado: 'pendiente',
+          anulada: false,
+          grupo_id: grupoId,
+          cuota_numero: cuotaBase + i,
+          cuota_total: totalNuevo,
+        });
+      }
+      const { error } = await supabase.from('operaciones').insert(nuevas);
+      if (error) throw error;
+      onSuccess();
+      onClose();
+    } catch (e) {
+      console.error(e);
+      alert('Error al replicar las operaciones.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white dark:bg-slate-950 w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="h-1.5 w-full bg-gradient-to-r from-primary to-primary-container" />
+        <div className="p-6 space-y-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-xl font-headline font-extrabold text-primary">Replicar Operación</h3>
+              <p className="text-xs text-on-surface-variant mt-1 font-bold truncate max-w-[220px]">{op.titulo}</p>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400">
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Repetir durante cuántos meses</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="1"
+                max="24"
+                value={meses}
+                onChange={(e) => setMeses(Number(e.target.value))}
+                className="flex-1 accent-primary"
+              />
+              <span className="text-2xl font-headline font-black text-primary w-12 text-center">{meses}</span>
+            </div>
+            <p className="text-[10px] text-on-surface-variant">
+              Se crearán <span className="font-black text-primary">{meses} cuota{meses > 1 ? 's' : ''}</span> con estado <span className="font-black">Pendiente</span>, una por mes a partir de {(() => { const [y,m,d] = op.fecha.split('-').map(Number); const next = new Date(y, m-1+1, d); return next.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }); })()}.
+            </p>
+          </div>
+
+          <button
+            onClick={handleReplicar}
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-primary text-white font-headline font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-sm">content_copy</span>
+                <span>Generar {meses} cuota{meses > 1 ? 's' : ''}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Operations = ({ onOpenModal }) => {
   const [loading, setLoading] = useState(true);
   const [operaciones, setOperaciones] = useState([]);
   const [rubros, setRubros] = useState([]);
   const [socios, setSocios] = useState([]);
-  
+  const [opToReplicate, setOpToReplicate] = useState(null);
+
   // Desglose de flujos para métricas
   const [m, setM] = useState({
     cobrado: 0,
@@ -119,6 +233,7 @@ const Operations = ({ onOpenModal }) => {
   };
 
   return (
+    <>
     <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto w-full space-y-12 overflow-y-auto pb-32">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -238,11 +353,17 @@ const Operations = ({ onOpenModal }) => {
                 </td>
                 <td className="px-4 py-4 md:px-6 md:py-6">
                   <p className="text-base font-headline font-extrabold text-slate-800 dark:text-slate-50 group-hover:text-primary transition-colors">{op.titulo}</p>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <p className="text-[10px] uppercase font-black text-slate-400 tracking-tighter opacity-60">{op.rubros?.nombre}</p>
                     {op.socios && (
                       <span className="text-[9px] uppercase font-black text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded tracking-tighter">
                         {op.socios.nombre}
+                      </span>
+                    )}
+                    {op.grupo_id && op.cuota_numero && (
+                      <span className="text-[9px] font-black text-violet-600 bg-violet-100 dark:bg-violet-900/30 dark:text-violet-400 px-2 py-0.5 rounded-full tracking-tighter flex items-center gap-1">
+                        <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>repeat</span>
+                        cuota {op.cuota_numero}/{op.cuota_total}
                       </span>
                     )}
                   </div>
@@ -258,16 +379,22 @@ const Operations = ({ onOpenModal }) => {
                   </div>
                 </td>
                 <td className="px-4 py-4 md:px-6 md:py-6 text-center">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAnular(op.id, op.titulo);
-                    }}
-                    className="w-10 h-10 flex items-center justify-center rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
-                    title="Anular operación"
-                  >
-                    <span className="material-symbols-outlined text-xl">block</span>
-                  </button>
+                  <div className="flex items-center justify-center gap-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setOpToReplicate(op); }}
+                      className="w-10 h-10 flex items-center justify-center rounded-full text-slate-400 hover:bg-primary/10 hover:text-primary transition-all"
+                      title="Replicar en meses siguientes"
+                    >
+                      <span className="material-symbols-outlined text-xl">content_copy</span>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleAnular(op.id, op.titulo); }}
+                      className="w-10 h-10 flex items-center justify-center rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                      title="Anular operación"
+                    >
+                      <span className="material-symbols-outlined text-xl">block</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -276,6 +403,15 @@ const Operations = ({ onOpenModal }) => {
       </div>
     </div>
   </div>
+
+  {opToReplicate && (
+    <ReplicarModal
+      op={opToReplicate}
+      onClose={() => setOpToReplicate(null)}
+      onSuccess={() => { fetchData(); setOpToReplicate(null); }}
+    />
+  )}
+    </>
   );
 };
 

@@ -17,17 +17,18 @@ function App() {
     const saved = localStorage.getItem('currentSocio');
     return saved ? JSON.parse(saved) : null;
   });
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   // Operaciones State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [operationToEdit, setOperationToEdit] = useState(null);
-  
+
   // Journal State
   const [isJournalModalOpen, setIsJournalModalOpen] = useState(false);
   const [noteToEdit, setNoteToEdit] = useState(null);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [docToEdit, setDocToEdit] = useState(null);
-  
+
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleSelectSocio = (socio) => {
@@ -59,10 +60,23 @@ function App() {
     setRefreshKey(prev => prev + 1);
   };
 
+  const handleNavClick = (view) => {
+    setCurrentView(view);
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="flex min-h-screen">
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* SideNavBar */}
-      <aside className="hidden md:flex flex-col h-screen w-64 border-r-0 bg-slate-50 dark:bg-slate-950 p-6 space-y-8 sticky top-0 flex-shrink-0 z-50">
+      <aside className={`fixed md:sticky top-0 left-0 h-screen w-64 flex flex-col bg-slate-50 dark:bg-slate-950 p-6 space-y-8 flex-shrink-0 z-50 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 lacquered-gradient rounded-xl flex items-center justify-center text-white">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance</span>
@@ -82,53 +96,23 @@ function App() {
         </button>
 
         <nav className="flex-1 space-y-1">
-          <button 
-            onClick={() => setCurrentView('dashboard')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 transition-all rounded-lg font-body text-sm font-medium ${currentView === 'dashboard' ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === 'dashboard' ? "'FILL' 1" : "'FILL' 0" }}>dashboard</span>
-            <span>Panel General</span>
-          </button>
-          
-          <button 
-            onClick={() => setCurrentView('operations')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 transition-all rounded-lg font-body text-sm font-medium ${currentView === 'operations' ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === 'operations' ? "'FILL' 1" : "'FILL' 0" }}>list_alt</span>
-            <span>Operaciones</span>
-          </button>
-
-          <button 
-            onClick={() => setCurrentView('socios')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 transition-all rounded-lg font-body text-sm font-medium ${currentView === 'socios' ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === 'socios' ? "'FILL' 1" : "'FILL' 0" }}>group</span>
-            <span>Balance por Socio</span>
-          </button>
-
-          <button 
-            onClick={() => setCurrentView('journal')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 transition-all rounded-lg font-body text-sm font-medium ${currentView === 'journal' ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === 'journal' ? "'FILL' 1" : "'FILL' 0" }}>menu_book</span>
-            <span>Diario</span>
-          </button>
-
-          <button 
-            onClick={() => setCurrentView('documentos')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 transition-all rounded-lg font-body text-sm font-medium ${currentView === 'documentos' ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === 'documentos' ? "'FILL' 1" : "'FILL' 0" }}>folder_special</span>
-            <span>Documentos</span>
-          </button>
-
-          <button 
-            onClick={() => setCurrentView('config')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 transition-all rounded-lg font-body text-sm font-medium ${currentView === 'config' ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === 'config' ? "'FILL' 1" : "'FILL' 0" }}>settings</span>
-            <span>Configuración</span>
-          </button>
+          {[
+            { view: 'dashboard', icon: 'dashboard', label: 'Panel General' },
+            { view: 'operations', icon: 'list_alt', label: 'Operaciones' },
+            { view: 'socios', icon: 'group', label: 'Balance por Socio' },
+            { view: 'journal', icon: 'menu_book', label: 'Diario' },
+            { view: 'documentos', icon: 'folder_special', label: 'Documentos' },
+            { view: 'config', icon: 'settings', label: 'Configuración' },
+          ].map(({ view, icon, label }) => (
+            <button
+              key={view}
+              onClick={() => handleNavClick(view)}
+              className={`w-full flex items-center space-x-3 px-4 py-3 transition-all rounded-lg font-body text-sm font-medium ${currentView === view ? 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
+            >
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: currentView === view ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
+              <span>{label}</span>
+            </button>
+          ))}
         </nav>
 
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
@@ -157,8 +141,14 @@ function App() {
       {/* Main Content */}
       <main className="flex-1 min-w-0 bg-surface flex flex-col h-screen overflow-hidden">
         {/* TopAppBar */}
-        <header className="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl flex justify-between items-center w-full px-8 py-4 sticky top-0 z-40 flex-shrink-0">
-          <div className="flex items-center space-x-4">
+        <header className="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl flex justify-between items-center w-full px-4 md:px-8 py-4 sticky top-0 z-40 flex-shrink-0">
+          <div className="flex items-center space-x-3">
+            <button
+              className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+              onClick={() => setIsSidebarOpen(prev => !prev)}
+            >
+              <span className="material-symbols-outlined">menu</span>
+            </button>
             <h2 className="text-xl font-bold tracking-widest uppercase text-slate-900 dark:text-slate-50 font-headline">Libro Editorial</h2>
           </div>
           <div className="flex items-center space-x-6">
@@ -207,34 +197,6 @@ function App() {
           )}
         </div>
       </main>
-
-      {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-50/90 backdrop-blur-md flex justify-around items-center py-4 px-6 z-50 border-t border-slate-200">
-        <button onClick={() => setCurrentView('dashboard')} className={`flex flex-col items-center gap-1 ${currentView === 'dashboard' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
-          <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] font-bold uppercase font-headline">Inicio</span>
-        </button>
-        <button onClick={() => setCurrentView('operations')} className={`flex flex-col items-center gap-1 ${currentView === 'operations' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
-          <span className="material-symbols-outlined">list_alt</span>
-          <span className="text-[10px] font-bold uppercase font-headline">Opers</span>
-        </button>
-        <button onClick={() => setCurrentView('journal')} className={`flex flex-col items-center gap-1 ${currentView === 'journal' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
-          <span className="material-symbols-outlined">menu_book</span>
-          <span className="text-[10px] font-bold uppercase font-headline">Diario</span>
-        </button>
-        <button onClick={() => setCurrentView('documentos')} className={`flex flex-col items-center gap-1 ${currentView === 'documentos' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
-          <span className="material-symbols-outlined">folder_special</span>
-          <span className="text-[10px] font-bold uppercase font-headline">Docs</span>
-        </button>
-        <button onClick={() => setCurrentView('socios')} className={`flex flex-col items-center gap-1 ${currentView === 'socios' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
-          <span className="material-symbols-outlined">group</span>
-          <span className="text-[10px] font-bold uppercase font-headline">Socios</span>
-        </button>
-        <button onClick={() => setCurrentView('config')} className={`flex flex-col items-center gap-1 ${currentView === 'config' ? 'text-slate-900 border-b-2 border-slate-900' : 'text-slate-500'}`}>
-          <span className="material-symbols-outlined">settings</span>
-          <span className="text-[10px] font-bold uppercase font-headline">Config</span>
-        </button>
-      </nav>
 
       {/* Socio Selection Overlay */}
       {!currentSocio && <SocioSelector onSelect={handleSelectSocio} />}

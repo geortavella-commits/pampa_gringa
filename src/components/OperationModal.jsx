@@ -104,7 +104,15 @@ const OperationModal = ({ isOpen, onClose, onSuccess, operationToEdit, currentSo
               <h3 className="text-2xl font-headline font-extrabold text-primary dark:text-white tracking-tight">
                 {operationToEdit ? 'Editar Registro' : (formData.tipo === 'ingreso' ? 'Registrar Cobro' : formData.tipo === 'retiro_socio' ? 'Registrar Retiro' : 'Registrar Gasto')}
               </h3>
-              <p className="text-xs text-on-surface-variant uppercase tracking-widest font-bold mt-1">Sincronización con Libro Mayor</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Sincronización con Libro Mayor</p>
+                {operationToEdit?.grupo_id && operationToEdit?.cuota_numero && (
+                  <span className="text-[9px] font-black text-violet-600 bg-violet-100 dark:bg-violet-900/30 dark:text-violet-400 px-2 py-0.5 rounded-full tracking-tighter flex items-center gap-1">
+                    <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>repeat</span>
+                    cuota {operationToEdit.cuota_numero}/{operationToEdit.cuota_total}
+                  </span>
+                )}
+              </div>
             </div>
             <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 font-bold">
               <span className="material-symbols-outlined">close</span>
