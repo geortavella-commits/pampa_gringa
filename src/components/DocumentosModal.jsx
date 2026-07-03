@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const sanitizeFilename = (name) =>
-  name.replace(/[^a-zA-Z0-9.\-_áéíóúÁÉÍÓÚüÜñÑ]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+const sanitizeFilename = (name) => {
+  const ext = name.includes('.') ? name.slice(name.lastIndexOf('.')) : '';
+  const base = name.slice(0, name.length - ext.length);
+  const clean = base
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9\-_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+  return clean + ext.toLowerCase();
+};
 
 const MIME_MAP = {
   pdf: 'application/pdf',
