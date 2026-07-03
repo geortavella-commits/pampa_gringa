@@ -4,6 +4,22 @@ import { supabase } from '../lib/supabaseClient';
 const sanitizeFilename = (name) =>
   name.replace(/[^a-zA-Z0-9.\-_() áéíóúÁÉÍÓÚüÜñÑ]/g, '_').replace(/\s+/g, ' ').trim();
 
+const MIME_MAP = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  png: 'image/png', webp: 'image/webp',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+
+const resolveMime = (file) => {
+  if (file.type) return file.type;
+  const ext = file.name.split('.').pop().toLowerCase();
+  return MIME_MAP[ext] || 'application/octet-stream';
+};
+
 const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentSocioId }) => {
   const [loading, setLoading] = useState(false);
   const [nombre, setNombre] = useState('');
@@ -43,9 +59,10 @@ const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentS
           if (removeError) throw removeError;
 
           const storagePath = `${categoria}/${Date.now()}-${sanitizeFilename(file.name)}`;
+          const mimeType = resolveMime(file);
           const { error: uploadError } = await supabase.storage
             .from('documentos')
-            .upload(storagePath, file);
+            .upload(storagePath, file, { contentType: mimeType });
           if (uploadError) throw uploadError;
 
           const { error: updateError } = await supabase
@@ -57,7 +74,7 @@ const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentS
               fecha,
               storage_path: storagePath,
               storage_name: file.name,
-              mime_type: file.type,
+              mime_type: mimeType,
               size_bytes: file.size,
               socio_id: currentSocioId
             })
@@ -78,10 +95,11 @@ const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentS
       } else {
         if (!file) throw new Error('Debe seleccionar un archivo');
 
+        const mimeType = resolveMime(file);
         const storagePath = `${categoria}/${Date.now()}-${sanitizeFilename(file.name)}`;
         const { error: uploadError } = await supabase.storage
           .from('documentos')
-          .upload(storagePath, file);
+          .upload(storagePath, file, { contentType: mimeType });
         if (uploadError) throw uploadError;
 
         const { error: insertError } = await supabase
@@ -93,7 +111,7 @@ const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentS
             fecha,
             storage_path: storagePath,
             storage_name: file.name,
-            mime_type: file.type,
+            mime_type: mimeType,
             size_bytes: file.size,
             socio_id: currentSocioId
           }]);
