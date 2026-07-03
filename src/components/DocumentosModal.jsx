@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 const sanitizeFilename = (name) =>
-  name.replace(/[^a-zA-Z0-9.\-_() áéíóúÁÉÍÓÚüÜñÑ]/g, '_').replace(/\s+/g, ' ').trim();
+  name.replace(/[^a-zA-Z0-9.\-_áéíóúÁÉÍÓÚüÜñÑ]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
 
 const MIME_MAP = {
   pdf: 'application/pdf',
