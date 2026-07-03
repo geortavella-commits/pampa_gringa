@@ -103,8 +103,9 @@ const DocumentosModal = ({ isOpen, onClose, onSuccess, documentoToEdit, currentS
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error(error);
-      alert('Error al guardar el documento');
+      console.error('DocumentosModal error:', error);
+      const msg = error?.message || error?.error_description || JSON.stringify(error);
+      alert(`Error al guardar el documento:\n${msg}`);
     } finally {
       setLoading(false);
     }
